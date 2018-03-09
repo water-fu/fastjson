@@ -655,6 +655,17 @@ public class JavaBeanDeserializer implements ObjectDeserializer {
                                     parser.resolveStatus = DefaultJSONParser.NeedToResolve;
                                 }
                             } else {
+                                if (ref.indexOf('\\') > 0) {
+                                    StringBuilder buf = new StringBuilder();
+                                    for (int i = 0; i < ref.length(); ++i) {
+                                        char ch = ref.charAt(i);
+                                        if (ch == '\\') {
+                                            ch = ref.charAt(++i);
+                                        }
+                                        buf.append(ch);
+                                    }
+                                    ref = buf.toString();
+                                }
                                 Object refObj = parser.resolveReference(ref);
                                 if (refObj != null) {
                                     object = refObj;
@@ -1162,7 +1173,12 @@ public class JavaBeanDeserializer implements ObjectDeserializer {
 
                 final FieldInfo fieldInfo = fieldDeser.fieldInfo;
                 Type paramType = fieldInfo.fieldType;
-                value = TypeUtils.cast(value, paramType, config);
+                String format = fieldInfo.format;
+                if (format != null && paramType == java.util.Date.class) {
+                    value = TypeUtils.castToDate(value, format);
+                } else {
+                    value = TypeUtils.cast(value, paramType, config);
+                }
 
                 fieldDeser.setValue(object, value);
             }
